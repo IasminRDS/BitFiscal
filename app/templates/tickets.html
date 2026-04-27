@@ -1,0 +1,44 @@
+{% extends "base.html" %} {% block content %}
+<div class="card">
+  <h3>Novo Ticket</h3>
+  <form method="post" action="/tickets/add">
+    <select name="canal">
+      <option>whatsapp</option>
+      <option>telefone</option>
+      <option>presencial</option>
+    </select>
+    <input name="cliente" placeholder="Cliente" required />
+    <input name="assunto" placeholder="Assunto" required />
+    <select name="prioridade">
+      <option>baixa</option>
+      <option>media</option>
+      <option>alta</option>
+    </select>
+    <button type="submit">Abrir</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Fila de Atendimento</h3>
+  <table>
+    <tr>
+      <th>Cliente</th>
+      <th>Assunto</th>
+      <th>Canal</th>
+      <th>Prioridade</th>
+      <th>Status</th>
+      <th>Data</th>
+    </tr>
+    {% for t in tickets %}
+    <tr>
+      <td>{{t.cliente}}</td>
+      <td>{{t.assunto}}</td>
+      <td>{{t.canal}}</td>
+      <td>{{t.prioridade}}</td>
+      <td>{{t.status}}</td>
+      <td>{{t.criado_em}}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

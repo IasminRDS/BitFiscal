@@ -1,0 +1,36 @@
+{% extends "base.html" %} {% block content %}
+<div class="card">
+  <h3>Adicionar Host</h3>
+  <form method="post" action="/monitor/add">
+    <input name="nome" placeholder="Nome do Host" required />
+    <input name="ip" placeholder="IP" required />
+    <button type="submit">Adicionar</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Hosts Monitorados</h3>
+  <table>
+    <tr>
+      <th>Nome</th>
+      <th>IP</th>
+      <th>Status</th>
+      <th>Ping (ms)</th>
+      <th>Ação</th>
+    </tr>
+    {% for h in hosts %}
+    <tr>
+      <td>{{h.nome}}</td>
+      <td>{{h.ip}}</td>
+      <td>{{h.status}}</td>
+      <td>{{h.ultimo_ping_ms}}</td>
+      <td>
+        <form method="post" action="/monitor/ping/{{h.id}}">
+          <button>Ping</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

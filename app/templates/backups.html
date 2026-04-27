@@ -1,0 +1,34 @@
+{% extends "base.html" %} {% block content %}
+<div class="card">
+  <h3>Registrar Backup</h3>
+  <form method="post" action="/backups/add">
+    <input name="alvo" placeholder="Servidor/PC" required />
+    <select name="status">
+      <option>ok</option>
+      <option>falha</option>
+    </select>
+    <input name="detalhe" placeholder="Detalhes (opcional)" />
+    <button type="submit">Registrar</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Histórico de Backups</h3>
+  <table>
+    <tr>
+      <th>Alvo</th>
+      <th>Status</th>
+      <th>Detalhe</th>
+      <th>Data</th>
+    </tr>
+    {% for b in backups %}
+    <tr>
+      <td>{{b.alvo}}</td>
+      <td>{{b.status}}</td>
+      <td>{{b.detalhe}}</td>
+      <td>{{b.criado_em}}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

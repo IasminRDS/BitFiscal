@@ -1,0 +1,35 @@
+{% extends "base.html" %} {% block content %}
+<div class="card">
+  <h3>Nova Regra</h3>
+  <form method="post" action="/usage/add">
+    <input name="grupo" placeholder="Grupo (Ex: Atendimento)" required />
+    <input name="categoria" placeholder="Categoria (Ex: Streaming)" required />
+    <select name="permitido">
+      <option>sim</option>
+      <option>nao</option>
+    </select>
+    <input name="horario" placeholder="Horário (Ex: 08:00-18:00)" required />
+    <button type="submit">Salvar</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Regras</h3>
+  <table>
+    <tr>
+      <th>Grupo</th>
+      <th>Categoria</th>
+      <th>Permitido</th>
+      <th>Horário</th>
+    </tr>
+    {% for r in regras %}
+    <tr>
+      <td>{{r.grupo}}</td>
+      <td>{{r.categoria}}</td>
+      <td>{{"Sim" if r.permitido else "Não"}}</td>
+      <td>{{r.horario}}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

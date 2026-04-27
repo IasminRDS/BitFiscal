@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+  <head>
+    <title>CONTECH Control Center</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header>
+      <h2>CONTECH Control Center</h2>
+      <nav>
+        <a href="/monitor">Monitoramento</a>
+        <a href="/usage">Controle de Uso</a>
+        <a href="/backups">Backups</a>
+        <a href="/tickets">Atendimento</a>
+      </nav>
+    </header>
+    <div class="container">{% block content %}{% endblock %}</div>
+  </body>
+</html>
