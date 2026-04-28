@@ -14,7 +14,22 @@
       <option>media</option>
       <option>alta</option>
     </select>
+    <input name="responsavel" placeholder="Responsável" required />
     <button type="submit">Abrir</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Filtros</h3>
+  <form method="get" action="/tickets">
+    <select name="status">
+      <option value="">Todos</option>
+      <option value="aberto">Abertos</option>
+      <option value="andamento">Andamento</option>
+      <option value="fechado">Fechados</option>
+    </select>
+    <input name="responsavel" placeholder="Responsável" />
+    <button type="submit">Filtrar</button>
   </form>
 </div>
 
@@ -27,7 +42,8 @@
       <th>Canal</th>
       <th>Prioridade</th>
       <th>Status</th>
-      <th>Data</th>
+      <th>Responsável</th>
+      <th>Ações</th>
     </tr>
     {% for t in tickets %}
     <tr>
@@ -36,7 +52,28 @@
       <td>{{t.canal}}</td>
       <td>{{t.prioridade}}</td>
       <td>{{t.status}}</td>
-      <td>{{t.criado_em}}</td>
+      <td>{{t.responsavel}}</td>
+      <td>
+        <form
+          method="post"
+          action="/tickets/status/{{t.id}}"
+          style="display: inline"
+        >
+          <select name="status">
+            <option>aberto</option>
+            <option>andamento</option>
+            <option>fechado</option>
+          </select>
+          <button type="submit">Salvar</button>
+        </form>
+        <form
+          method="post"
+          action="/tickets/delete/{{t.id}}"
+          style="display: inline"
+        >
+          <button class="danger" type="submit">Excluir</button>
+        </form>
+      </td>
     </tr>
     {% endfor %}
   </table>

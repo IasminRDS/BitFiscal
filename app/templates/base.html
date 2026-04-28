@@ -3,15 +3,21 @@
   <head>
     <title>CONTECH Control Center</title>
     <link rel="stylesheet" href="/static/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
     <header>
       <h2>CONTECH Control Center</h2>
       <nav>
+        <a href="/dashboard">Dashboard</a>
         <a href="/monitor">Monitoramento</a>
         <a href="/usage">Controle de Uso</a>
         <a href="/backups">Backups</a>
         <a href="/tickets">Atendimento</a>
+        <a href="/reports">Relatórios</a>
+        <form method="post" action="/auth/logout" style="display: inline">
+          <button class="link-btn">Sair</button>
+        </form>
       </nav>
     </header>
     <div class="container">{% block content %}{% endblock %}</div>

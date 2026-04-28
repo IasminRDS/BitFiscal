@@ -1,0 +1,52 @@
+{% extends "base.html" %} {% block content %}
+<div class="card">
+  <h2>{{ticket.titulo}}</h2>
+  <p>{{ticket.descricao}}</p>
+  <p><b>Status:</b> {{ticket.status}}</p>
+  <form method="post" action="/tickets/{{ticket.id}}/status">
+    <select name="status">
+      <option>aberto</option>
+      <option>andamento</option>
+      <option>pendente_aprovacao</option>
+      <option>fechado</option>
+    </select>
+    <button type="submit">Atualizar</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Anexos</h3>
+  <form
+    method="post"
+    action="/tickets/{{ticket.id}}/anexar"
+    enctype="multipart/form-data"
+  >
+    <input type="file" name="file" />
+    <button type="submit">Enviar</button>
+  </form>
+  <ul>
+    {% for anexo in ticket.anexos %}
+    <li>
+      <a href="/download/{{anexo.id}}">{{anexo.filename}}</a> enviado por
+      {{anexo.uploader.username}} em {{anexo.created_at}}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div class="card">
+  <h3>Comentários</h3>
+  <form method="post" action="/tickets/{{ticket.id}}/comentar">
+    <textarea name="texto" required></textarea>
+    <button type="submit">Comentar</button>
+  </form>
+  <ul>
+    {% for c in ticket.comentarios %}
+    <li>
+      <strong>{{c.autor.username}}:</strong> {{c.texto}}
+      <em>{{c.criado_em}}</em>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

@@ -4,7 +4,6 @@ import time
 
 
 def ping_host(ip: str) -> tuple[str, int]:
-    # Retorna (status, ms)
     param = "-n" if platform.system().lower() == "windows" else "-c"
     cmd = ["ping", param, "1", ip]
     start = time.time()

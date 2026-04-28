@@ -1,0 +1,32 @@
+{% extends "base.html" %} {% block content %}
+<div class="card">
+  <h3>Usuários da empresa</h3>
+  <table>
+    <tr>
+      <th>Usuário</th>
+      <th>Papel</th>
+      <th>Ações</th>
+    </tr>
+    {% for user in users %}
+    <tr>
+      <td>{{user.username}}</td>
+      <td>{{user.role}}</td>
+      <td>
+        <!-- Botão para editar papel/excluir, só admin -->
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  <h4>Adicionar novo usuário</h4>
+  <form method="post" action="/users/add">
+    <input name="username" placeholder="Usuário" required />
+    <input name="password" type="password" placeholder="Senha" required />
+    <select name="role">
+      <option value="operador">Operador</option>
+      <option value="gestor">Gestor</option>
+      <option value="admin">Admin</option>
+    </select>
+    <button type="submit">Salvar</button>
+  </form>
+</div>
+{% endblock %}

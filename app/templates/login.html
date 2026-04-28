@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Login | BITFISCAL</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <style>
+      body {
+        background: #f4f6f9;
+      }
+      .login-container {
+        display: flex;
+        height: 100vh;
+        align-items: center;
+        justify-content: center;
+      }
+      .login-card {
+        padding: 32px 24px 24px 24px;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px 0 rgba(31, 60, 136, 0.16);
+        background: white;
+        min-width: 320px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .login-card img {
+        width: 54px;
+        margin-bottom: 10px;
+      }
+      .login-card h2 {
+        margin: 0 0 20px 0;
+        color: #22366b;
+        font-weight: 700;
+      }
+      .login-card form {
+        width: 100%;
+      }
+      .login-card input[type="text"],
+      .login-card input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 12px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+      }
+      .login-card button {
+        width: 100%;
+        background: #1f3c88;
+        color: white;
+        padding: 10px;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+      }
+      .login-card .extra {
+        margin-top: 12px;
+        text-align: center;
+        font-size: 15px;
+      }
+      .login-card .error {
+        background: #fbeaec;
+        color: #c0392b;
+        border-radius: 7px;
+        padding: 6px 0;
+        margin-bottom: 12px;
+      }
+      .login-card .brand {
+        font-weight: bold;
+        font-size: 22px;
+        letter-spacing: 1px;
+        color: #116;
+        margin-bottom: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <div class="login-card">
+        <img src="/static/logo.png" alt="Logo" />
+        <div class="brand">BITFISCAL</div>
+        <h2>Login</h2>
+        {% if error %}
+        <div class="error">{{error}}</div>
+        {% endif %}
+        <form method="post" action="/auth/login">
+          <input
+            type="text"
+            name="username"
+            placeholder="Usuário"
+            required
+            autofocus
+          />
+          <input type="password" name="password" placeholder="Senha" required />
+          <button type="submit">Entrar</button>
+        </form>
+        <div class="extra">
+          <a href="#">Esqueceu a senha?</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

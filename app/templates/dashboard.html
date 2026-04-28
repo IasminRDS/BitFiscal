@@ -1,0 +1,35 @@
+{% extends "base.html" %} {% block content %}
+<div class="grid">
+  <div class="card">
+    <h3>Hosts</h3>
+    <p>{{total_hosts}}</p>
+  </div>
+  <div class="card">
+    <h3>Tickets</h3>
+    <p>{{total_tickets}}</p>
+  </div>
+  <div class="card">
+    <h3>Backups</h3>
+    <p>{{total_backups}}</p>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Status dos Tickets</h3>
+  <canvas id="ticketChart"></canvas>
+</div>
+
+<script>
+  const ctx = document.getElementById('ticketChart');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Aberto', 'Fechado', 'Andamento'],
+      datasets: [{
+        data: [{{status_counts.aberto}}, {{status_counts.fechado}}, {{status_counts.andamento}}],
+        backgroundColor: ['#e67e22', '#2ecc71', '#3498db']
+      }]
+    }
+  });
+</script>
+{% endblock %}

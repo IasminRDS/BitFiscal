@@ -16,7 +16,7 @@
       <th>IP</th>
       <th>Status</th>
       <th>Ping (ms)</th>
-      <th>Ação</th>
+      <th>Atualizado</th>
     </tr>
     {% for h in hosts %}
     <tr>
@@ -24,11 +24,7 @@
       <td>{{h.ip}}</td>
       <td>{{h.status}}</td>
       <td>{{h.ultimo_ping_ms}}</td>
-      <td>
-        <form method="post" action="/monitor/ping/{{h.id}}">
-          <button>Ping</button>
-        </form>
-      </td>
+      <td>{{h.atualizado_em}}</td>
     </tr>
     {% endfor %}
   </table>
