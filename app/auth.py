@@ -1,97 +1,94 @@
-from fastapi import Request, Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
+from fastapi import Depends, HTTPException, status, Request
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
 from passlib.context import CryptContext
+from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
-from jose import jwt, JWTError
-import secrets
+from typing import Optional
 
-from .db import Base, engine, get_db
-from .models import User, RefreshToken
 from .config import settings
+from .db import get_db
+from .models import User
 
-pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
-security = HTTPBearer(auto_error=False)  # Permite Authorization: Bearer <token>
+# 🔐 Configurações de segurança
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# 🎫 OAuth2 scheme para documentação do Swagger (auto_error=False para não bloquear cookie)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 
-# -------- Password Helpers --------
-def hash_password(password: str) -> str:
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def verify_password(password: str, hashed: str) -> bool:
-    return pwd_context.verify(password, hashed)
-
-
-# -------- Tokens: Create & Verify --------
-def create_access_token(data: dict):
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.utcnow() + (expires_delta or timedelta(hours=1))
     to_encode.update({"exp": expire})
-    return jwt.encode(
-        to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
-    )
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-def create_refresh_token():
-    return secrets.token_urlsafe(48)
+def save_refresh_token(user_id: int, token: str, db: Session):
+    # Implementação opcional: persistir refresh token no DB se necessário
+    pass
 
 
-def verify_access_token(token: str):
-    try:
-        payload = jwt.decode(
-            token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
-        )
-        return payload
-    except JWTError:
-        return None
+def revoke_refresh_token(user_id: int, db: Session):
+    # Implementação opcional: invalidar refresh token no DB
+    pass
 
 
-# -------- Persistência dos RefreshTokens --------
-def save_refresh_token(db: Session, user_id: int, token: str):
-    expires = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    rt = RefreshToken(token=token, user_id=user_id, expires_at=expires, revoked=False)
-    db.add(rt)
-    db.commit()
-
-
-def revoke_refresh_token(db: Session, token: str):
-    rt = db.query(RefreshToken).filter(RefreshToken.token == token).first()
-    if rt:
-        rt.revoked = True
-        db.commit()
-
-
-# -------- Função principal de user autenticado --------
 def get_current_user(
     request: Request,
     db: Session = Depends(get_db),
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    token = None
-
-    # 1. Primeiro tenta Authorization: Bearer <token>
-    if credentials and credentials.scheme.lower() == "bearer":
-        token = credentials.credentials
-    # 2. Depois tenta cookie "access_token"
+    token: Optional[str] = Depends(oauth2_scheme),
+) -> User:
+    """
+    Obtém o usuário atual verificando:
+    1. Cookie 'access_token' (para SSR/Jinja2)
+    2. Header 'Authorization: Bearer <token>' (para APIs)
+    """
+    # 🔍 Tenta pegar do cookie primeiro (seu fluxo principal)
     if not token:
         token = request.cookies.get("access_token")
+
     if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Não autenticado. Nenhum token fornecido.",
-        )
-    payload = verify_access_token(token)
-    if not payload or "sub" not in payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token inválido ou expirado.",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-    user_id = payload.get("sub")
-    user = db.query(User).get(int(user_id))
-    if not user:
+
+    try:
+        # 🔓 Decodifica o JWT
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token inválido.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido ou expirado.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # 👤 Busca o usuário no banco
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Usuário não encontrado.",
+            headers={"WWW-Authenticate": "Bearer"},
         )
+
     return user

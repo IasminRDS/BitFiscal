@@ -1,81 +1,255 @@
-{% extends "base.html" %} {% block content %}
-<div class="card">
-  <h3>Novo Ticket</h3>
-  <form method="post" action="/tickets/add">
-    <select name="canal">
-      <option>whatsapp</option>
-      <option>telefone</option>
-      <option>presencial</option>
-    </select>
-    <input name="cliente" placeholder="Cliente" required />
-    <input name="assunto" placeholder="Assunto" required />
-    <select name="prioridade">
-      <option>baixa</option>
-      <option>media</option>
-      <option>alta</option>
-    </select>
-    <input name="responsavel" placeholder="Responsável" required />
-    <button type="submit">Abrir</button>
-  </form>
-</div>
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atendimento - BITFISCAL</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+        display: flex;
+        min-height: 100vh;
+      }
+      .sidebar {
+        width: 260px;
+        background: #1e293b;
+        border-right: 1px solid #334155;
+        padding: 24px 0;
+        position: fixed;
+        height: 100vh;
+      }
+      .sidebar-logo {
+        padding: 0 24px 24px;
+        border-bottom: 1px solid #334155;
+        margin-bottom: 24px;
+      }
+      .sidebar-logo h2 {
+        color: #fff;
+        font-size: 24px;
+      }
+      .sidebar-logo p {
+        color: #94a3b8;
+        font-size: 12px;
+      }
+      .nav-item {
+        padding: 14px 24px;
+        color: #94a3b8;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.3s;
+        border-left: 3px solid transparent;
+      }
+      .nav-item:hover {
+        background: rgba(59, 130, 246, 0.1);
+        color: #fff;
+        border-left-color: #3b82f6;
+      }
+      .nav-item.active {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3b82f6;
+        border-left-color: #3b82f6;
+      }
+      .main-content {
+        flex: 1;
+        margin-left: 260px;
+        padding: 30px;
+      }
+      .header {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #334155;
+      }
+      .header h1 {
+        color: #fff;
+        font-size: 28px;
+      }
+      .form-group {
+        margin-bottom: 16px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        color: #94a3b8;
+        font-size: 14px;
+      }
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        max-width: 500px;
+        padding: 10px;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        background: #0f172a;
+        color: #fff;
+      }
+      .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+      }
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        margin-right: 10px;
+      }
+      .btn-primary {
+        background: #3b82f6;
+        color: white;
+      }
+      .btn-primary:hover {
+        background: #2563eb;
+      }
+      .card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+      .card-title {
+        font-size: 18px;
+        color: #fff;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #334155;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #334155;
+      }
+      th {
+        color: #94a3b8;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 12px;
+      }
+      .badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .badge-aberto {
+        background: rgba(245, 158, 11, 0.2);
+        color: #f59e0b;
+      }
+      .badge-andamento {
+        background: rgba(59, 130, 246, 0.2);
+        color: #3b82f6;
+      }
+      .badge-fechado {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <h2>🔷 BITFISCAL</h2>
+        <p>Sistema de Gestão</p>
+      </div>
+      <nav>
+        <a href="/dashboard" class="nav-item">📊 Dashboard</a>
+        <a href="/monitor" class="nav-item">📡 Monitoramento</a>
+        <a href="/tickets" class="nav-item active">🎫 Atendimento</a>
+        <a href="/backups" class="nav-item">💾 Backups</a>
+        <a href="/usage" class="nav-item">🔒 Controle de Uso</a>
+        <a href="/reports" class="nav-item">📈 Relatórios</a>
+      </nav>
+    </aside>
 
-<div class="card">
-  <h3>Filtros</h3>
-  <form method="get" action="/tickets">
-    <select name="status">
-      <option value="">Todos</option>
-      <option value="aberto">Abertos</option>
-      <option value="andamento">Andamento</option>
-      <option value="fechado">Fechados</option>
-    </select>
-    <input name="responsavel" placeholder="Responsável" />
-    <button type="submit">Filtrar</button>
-  </form>
-</div>
+    <main class="main-content">
+      <div class="header">
+        <h1>🎫 Central de Atendimento</h1>
+        <p style="color: #94a3b8">
+          Gestão de tickets e solicitações - IRPF 2026
+        </p>
+      </div>
 
-<div class="card">
-  <h3>Fila de Atendimento</h3>
-  <table>
-    <tr>
-      <th>Cliente</th>
-      <th>Assunto</th>
-      <th>Canal</th>
-      <th>Prioridade</th>
-      <th>Status</th>
-      <th>Responsável</th>
-      <th>Ações</th>
-    </tr>
-    {% for t in tickets %}
-    <tr>
-      <td>{{t.cliente}}</td>
-      <td>{{t.assunto}}</td>
-      <td>{{t.canal}}</td>
-      <td>{{t.prioridade}}</td>
-      <td>{{t.status}}</td>
-      <td>{{t.responsavel}}</td>
-      <td>
-        <form
-          method="post"
-          action="/tickets/status/{{t.id}}"
-          style="display: inline"
-        >
-          <select name="status">
-            <option>aberto</option>
-            <option>andamento</option>
-            <option>fechado</option>
-          </select>
-          <button type="submit">Salvar</button>
+      <div class="card">
+        <div class="card-title">Abrir Novo Ticket</div>
+        <form method="POST" action="/tickets/create">
+          <div class="form-group">
+            <label>Título</label>
+            <input
+              type="text"
+              name="titulo"
+              placeholder="Resumo do problema"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label>Descrição</label>
+            <textarea
+              name="descricao"
+              placeholder="Descreva detalhadamente o problema..."
+              required
+            ></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Abrir Ticket</button>
         </form>
-        <form
-          method="post"
-          action="/tickets/delete/{{t.id}}"
-          style="display: inline"
-        >
-          <button class="danger" type="submit">Excluir</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-  </table>
-</div>
-{% endblock %}
+      </div>
+
+      <div class="card">
+        <div class="card-title">Tickets Recentes</div>
+        {% if tickets %}
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Título</th>
+              <th>Status</th>
+              <th>Solicitante</th>
+              <th>Aberto em</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ticket in tickets %}
+            <tr>
+              <td>{{ ticket.id }}</td>
+              <td>{{ ticket.titulo }}</td>
+              <td>
+                <span class="badge badge-{{ ticket.status }}"
+                  >{{ ticket.status|upper }}</span
+                >
+              </td>
+              <td>{{ ticket.solicitante_id }}</td>
+              <td>{{ ticket.created_at }}</td>
+              <td>
+                <a href="/tickets/{{ ticket.id }}" style="color: #3b82f6"
+                  >Ver</a
+                >
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p style="color: #94a3b8; text-align: center; padding: 40px">
+          Nenhum ticket encontrado.
+        </p>
+        {% endif %}
+      </div>
+    </main>
+  </body>
+</html>

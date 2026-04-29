@@ -1,34 +1,243 @@
-{% extends "base.html" %} {% block content %}
-<div class="card">
-  <h3>Registrar Backup</h3>
-  <form method="post" action="/backups/add">
-    <input name="alvo" placeholder="Servidor/PC" required />
-    <select name="status">
-      <option>ok</option>
-      <option>falha</option>
-    </select>
-    <input name="detalhe" placeholder="Detalhes (opcional)" />
-    <button type="submit">Registrar</button>
-  </form>
-</div>
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Backups - BITFISCAL</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+        display: flex;
+        min-height: 100vh;
+      }
+      .sidebar {
+        width: 260px;
+        background: #1e293b;
+        border-right: 1px solid #334155;
+        padding: 24px 0;
+        position: fixed;
+        height: 100vh;
+      }
+      .sidebar-logo {
+        padding: 0 24px 24px;
+        border-bottom: 1px solid #334155;
+        margin-bottom: 24px;
+      }
+      .sidebar-logo h2 {
+        color: #fff;
+        font-size: 24px;
+      }
+      .sidebar-logo p {
+        color: #94a3b8;
+        font-size: 12px;
+      }
+      .nav-item {
+        padding: 14px 24px;
+        color: #94a3b8;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.3s;
+        border-left: 3px solid transparent;
+      }
+      .nav-item:hover {
+        background: rgba(59, 130, 246, 0.1);
+        color: #fff;
+        border-left-color: #3b82f6;
+      }
+      .nav-item.active {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3b82f6;
+        border-left-color: #3b82f6;
+      }
+      .main-content {
+        flex: 1;
+        margin-left: 260px;
+        padding: 30px;
+      }
+      .header {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #334155;
+      }
+      .header h1 {
+        color: #fff;
+        font-size: 28px;
+      }
+      .form-group {
+        margin-bottom: 16px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        color: #94a3b8;
+        font-size: 14px;
+      }
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        max-width: 400px;
+        padding: 10px;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        background: #0f172a;
+        color: #fff;
+      }
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .btn-primary {
+        background: #10b981;
+        color: white;
+      }
+      .btn-primary:hover {
+        background: #059669;
+      }
+      .card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+      .card-title {
+        font-size: 18px;
+        color: #fff;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #334155;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #334155;
+      }
+      th {
+        color: #94a3b8;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 12px;
+      }
+      .status-ok {
+        color: #10b981;
+        font-weight: 600;
+      }
+      .status-error {
+        color: #ef4444;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <h2>🔷 BITFISCAL</h2>
+        <p>Sistema de Gestão</p>
+      </div>
+      <nav>
+        <a href="/dashboard" class="nav-item">📊 Dashboard</a>
+        <a href="/monitor" class="nav-item">📡 Monitoramento</a>
+        <a href="/tickets" class="nav-item">🎫 Atendimento</a>
+        <a href="/backups" class="nav-item active">💾 Backups</a>
+        <a href="/usage" class="nav-item">🔒 Controle de Uso</a>
+        <a href="/reports" class="nav-item">📈 Relatórios</a>
+      </nav>
+    </aside>
 
-<div class="card">
-  <h3>Histórico de Backups</h3>
-  <table>
-    <tr>
-      <th>Alvo</th>
-      <th>Status</th>
-      <th>Detalhe</th>
-      <th>Data</th>
-    </tr>
-    {% for b in backups %}
-    <tr>
-      <td>{{b.alvo}}</td>
-      <td>{{b.status}}</td>
-      <td>{{b.detalhe}}</td>
-      <td>{{b.iniciado_em}}</td>
-    </tr>
-    {% endfor %}
-  </table>
-</div>
-{% endblock %}
+    <main class="main-content">
+      <div class="header">
+        <h1>💾 Gestão de Backups</h1>
+        <p style="color: #94a3b8">
+          Registro e acompanhamento de rotinas de backup
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Registrar Backup</div>
+        <form method="POST" action="/backups/add">
+          <div class="form-group">
+            <label>Servidor / PC Alvo</label>
+            <input
+              type="text"
+              name="alvo"
+              placeholder="Ex: SRV-ARQUIVOS-01"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select name="status" required>
+              <option value="sucesso">✅ Sucesso</option>
+              <option value="falha">❌ Falha</option>
+              <option value="parcial">⚠️ Parcial</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Detalhes (opcional)</label>
+            <input
+              type="text"
+              name="detalhe"
+              placeholder="Observações sobre o backup"
+            />
+          </div>
+          <button type="submit" class="btn btn-primary">
+            Registrar Backup
+          </button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Histórico de Backups</div>
+        {% if backups %}
+        <table>
+          <thead>
+            <tr>
+              <th>Alvo</th>
+              <th>Status</th>
+              <th>Detalhes</th>
+              <th>Iniciado em</th>
+              <th>Finalizado em</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for backup in backups %}
+            <tr>
+              <td>{{ backup.alvo }}</td>
+              <td
+                class="status-{{ 'ok' if backup.status == 'sucesso' else 'error' }}"
+              >
+                {{ backup.status|upper }}
+              </td>
+              <td>{{ backup.detalhe or '-' }}</td>
+              <td>{{ backup.iniciado_em }}</td>
+              <td>{{ backup.finalizado_em or 'Em andamento' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p style="color: #94a3b8; text-align: center; padding: 40px">
+          Nenhum backup registrado.
+        </p>
+        {% endif %}
+      </div>
+    </main>
+  </body>
+</html>

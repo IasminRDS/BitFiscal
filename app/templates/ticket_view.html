@@ -1,52 +1,196 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %} {% block page_title %}Ticket #{{ ticket.id }}{%
+endblock %} {% block content %}
+
 <div class="card">
-  <h2>{{ticket.titulo}}</h2>
-  <p>{{ticket.descricao}}</p>
-  <p><b>Status:</b> {{ticket.status}}</p>
-  <form method="post" action="/tickets/{{ticket.id}}/status">
-    <select name="status">
-      <option>aberto</option>
-      <option>andamento</option>
-      <option>pendente_aprovacao</option>
-      <option>fechado</option>
-    </select>
-    <button type="submit">Atualizar</button>
+  <div
+    style="
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    "
+  >
+    <div>
+      <h2
+        style="
+          font-family: var(--font-head);
+          font-size: 20px;
+          font-weight: 700;
+          margin-bottom: 6px;
+        "
+      >
+        {{ ticket.titulo }}
+      </h2>
+      <p style="color: var(--muted); font-size: 13px">{{ ticket.descricao }}</p>
+    </div>
+    <span
+      class="badge badge-{{ ticket.status }}"
+      style="flex-shrink: 0; font-size: 12px"
+      >{{ ticket.status }}</span
+    >
+  </div>
+
+  <form method="post" action="/tickets/{{ ticket.id }}/status">
+    <div class="form-row" style="gap: 8px">
+      <select name="status" style="width: auto; min-width: 150px; margin: 0">
+        <option {% if ticket.status="" ="aberto" %}selected{% endif %}>
+          aberto
+        </option>
+        <option {% if ticket.status="" ="andamento" %}selected{% endif %}>
+          andamento
+        </option>
+        <option
+          {%
+          if
+          ticket.status=""
+          ="pendente_aprovacao"
+          %}selected{%
+          endif
+          %}
+        >
+          pendente_aprovacao
+        </option>
+        <option {% if ticket.status="" ="fechado" %}selected{% endif %}>
+          fechado
+        </option>
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">
+        Atualizar Status
+      </button>
+    </div>
   </form>
 </div>
 
+<!-- Anexos -->
 <div class="card">
-  <h3>Anexos</h3>
+  <div class="card-title">Anexos</div>
   <form
     method="post"
-    action="/tickets/{{ticket.id}}/anexar"
+    action="/tickets/{{ ticket.id }}/anexar"
     enctype="multipart/form-data"
   >
-    <input type="file" name="file" />
-    <button type="submit">Enviar</button>
+    <div class="form-row" style="gap: 8px; align-items: flex-end">
+      <input type="file" name="file" style="flex: 1; margin: 0" />
+      <button type="submit" class="btn btn-secondary btn-sm">Enviar</button>
+    </div>
   </form>
-  <ul>
+
+  {% if ticket.anexos %}
+  <ul
+    style="
+      list-style: none;
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    "
+  >
     {% for anexo in ticket.anexos %}
-    <li>
-      <a href="/download/{{anexo.id}}">{{anexo.filename}}</a> enviado por
-      {{anexo.uploader.username}} em {{anexo.created_at}}
+    <li
+      style="
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        background: var(--surface2);
+        border-radius: 8px;
+        font-size: 13px;
+      "
+    >
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="var(--accent)"
+        stroke-width="2"
+        stroke-linecap="round"
+      >
+        <path
+          d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"
+        />
+      </svg>
+      <a href="/download/{{ anexo.id }}">{{ anexo.filename }}</a>
+      <span style="color: var(--muted); font-size: 11px; margin-left: auto"
+        >{{ anexo.uploader.username }} — {{ anexo.created_at.strftime('%d/%m/%Y
+        %H:%M') if anexo.created_at else '' }}</span
+      >
     </li>
     {% endfor %}
   </ul>
+  {% else %}
+  <p style="color: var(--muted); font-size: 13px; margin-top: 12px">
+    Nenhum anexo ainda.
+  </p>
+  {% endif %}
 </div>
 
+<!-- Comentários -->
 <div class="card">
-  <h3>Comentários</h3>
-  <form method="post" action="/tickets/{{ticket.id}}/comentar">
-    <textarea name="texto" required></textarea>
-    <button type="submit">Comentar</button>
+  <div class="card-title">Comentários</div>
+  <form
+    method="post"
+    action="/tickets/{{ ticket.id }}/comentar"
+    style="margin-bottom: 18px"
+  >
+    <textarea
+      name="texto"
+      placeholder="Escreva um comentário..."
+      required
+    ></textarea>
+    <button
+      type="submit"
+      class="btn btn-primary btn-sm"
+      style="margin-top: 6px"
+    >
+      Comentar
+    </button>
   </form>
-  <ul>
+
+  {% if ticket.comentarios %}
+  <div style="display: flex; flex-direction: column; gap: 10px">
     {% for c in ticket.comentarios %}
-    <li>
-      <strong>{{c.autor.username}}:</strong> {{c.texto}}
-      <em>{{c.criado_em}}</em>
-    </li>
+    <div
+      style="
+        background: var(--surface2);
+        border-radius: 8px;
+        padding: 12px 14px;
+      "
+    >
+      <div
+        style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px"
+      >
+        <div
+          style="
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-head);
+            font-weight: 700;
+            font-size: 11px;
+            color: #fff;
+          "
+        >
+          {{ c.autor.username[0].upper() }}
+        </div>
+        <strong style="font-size: 13px">{{ c.autor.username }}</strong>
+        <span style="color: var(--muted); font-size: 11px; margin-left: auto"
+          >{{ c.criado_em.strftime('%d/%m/%Y %H:%M') if c.criado_em else ''
+          }}</span
+        >
+      </div>
+      <p style="font-size: 13.5px; color: var(--text)">{{ c.texto }}</p>
+    </div>
     {% endfor %}
-  </ul>
+  </div>
+  {% else %}
+  <p style="color: var(--muted); font-size: 13px">Nenhum comentário ainda.</p>
+  {% endif %}
 </div>
+
 {% endblock %}

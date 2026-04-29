@@ -1,99 +1,96 @@
 <!doctype html>
-<html>
+<html lang="pt-BR">
   <head>
-    <title>Login | BITFISCAL</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — CONTECH</title>
     <link rel="stylesheet" href="/static/style.css" />
-    <style>
-      body {
-        background: #f4f6f9;
-      }
-      .login-container {
-        display: flex;
-        height: 100vh;
-        align-items: center;
-        justify-content: center;
-      }
-      .login-card {
-        padding: 32px 24px 24px 24px;
-        border-radius: 16px;
-        box-shadow: 0 8px 32px 0 rgba(31, 60, 136, 0.16);
-        background: white;
-        min-width: 320px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-      .login-card img {
-        width: 54px;
-        margin-bottom: 10px;
-      }
-      .login-card h2 {
-        margin: 0 0 20px 0;
-        color: #22366b;
-        font-weight: 700;
-      }
-      .login-card form {
-        width: 100%;
-      }
-      .login-card input[type="text"],
-      .login-card input[type="password"] {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 12px;
-        border-radius: 6px;
-        border: 1px solid #ddd;
-      }
-      .login-card button {
-        width: 100%;
-        background: #1f3c88;
-        color: white;
-        padding: 10px;
-        border: none;
-        border-radius: 8px;
-        font-weight: bold;
-      }
-      .login-card .extra {
-        margin-top: 12px;
-        text-align: center;
-        font-size: 15px;
-      }
-      .login-card .error {
-        background: #fbeaec;
-        color: #c0392b;
-        border-radius: 7px;
-        padding: 6px 0;
-        margin-bottom: 12px;
-      }
-      .login-card .brand {
-        font-weight: bold;
-        font-size: 22px;
-        letter-spacing: 1px;
-        color: #116;
-        margin-bottom: 8px;
-      }
-    </style>
   </head>
   <body>
-    <div class="login-container">
+    <div class="login-page">
       <div class="login-card">
-        <img src="/static/logo.png" alt="Logo" />
-        <div class="brand">BITFISCAL</div>
-        <h2>Login</h2>
+        <!-- Logo -->
+        <div class="login-logo">
+          <svg
+            class="login-logo-icon"
+            viewBox="0 0 44 44"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect width="44" height="44" rx="12" fill="#1a2340" />
+            <path
+              d="M10 22C10 15.373 15.373 10 22 10s12 5.373 12 12-5.373 12-12 12S10 28.627 10 22z"
+              stroke="#3d7fff"
+              stroke-width="1.8"
+            />
+            <path
+              d="M16 22h12M22 16v12"
+              stroke="#3d7fff"
+              stroke-width="2.2"
+              stroke-linecap="round"
+            />
+            <circle cx="22" cy="22" r="3" fill="#00d4aa" />
+            <path
+              d="M22 10v2.5M22 31.5V34M10 22h2.5M31.5 22H34"
+              stroke="#3d7fff"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              opacity="0.45"
+            />
+          </svg>
+          <div class="login-logo-text">
+            CONTECH
+            <span>Control Center</span>
+          </div>
+        </div>
+
+        <div class="login-heading">Bem-vindo de volta</div>
+        <div class="login-sub">Acesse com suas credenciais</div>
+
         {% if error %}
-        <div class="error">{{error}}</div>
+        <div class="alert alert-error">{{ error }}</div>
         {% endif %}
+
         <form method="post" action="/auth/login">
-          <input
-            type="text"
-            name="username"
-            placeholder="Usuário"
-            required
-            autofocus
-          />
-          <input type="password" name="password" placeholder="Senha" required />
-          <button type="submit">Entrar</button>
+          <div class="form-group">
+            <label class="form-label">Usuário</label>
+            <input
+              type="text"
+              name="username"
+              placeholder="seu.usuario"
+              required
+              autofocus
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Senha</label>
+            <input
+              type="password"
+              name="password"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <button type="submit">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+              <polyline points="10 17 15 12 10 7" />
+              <line x1="15" y1="12" x2="3" y2="12" />
+            </svg>
+            Entrar
+          </button>
         </form>
-        <div class="extra">
+
+        <div class="login-footer">
           <a href="#">Esqueceu a senha?</a>
         </div>
       </div>

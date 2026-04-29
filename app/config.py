@@ -1,20 +1,28 @@
 from pydantic_settings import BaseSettings
+from functools import lru_cache
+import secrets
 
 
 class Settings(BaseSettings):
-    APP_NAME: str
-    SECRET_KEY: str
-    ADMIN_USER: str
-    ADMIN_PASS: str
-    DATABASE_URL: str
-    JWT_SECRET_KEY: str
-    JWT_ALGORITHM: str
-    ACCESS_TOKEN_EXPIRE_MINUTES: int
-    REFRESH_TOKEN_EXPIRE_DAYS: int
-    COOKIE_SECURE: bool = False
+    # 🔐 JWT
+    SECRET_KEY: str = secrets.token_urlsafe(32)
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120
+
+    # 🗄️ Database
+    DATABASE_URL: str = "sqlite:///./bitfiscal.db"
+
+    # 🌐 App
+    APP_NAME: str = "BITFISCAL - Gestão Contábil"  # ← ALTERADO
+    DEBUG: bool = True
 
     class Config:
         env_file = ".env"
 
 
-settings = Settings()
+@lru_cache()
+def get_settings():
+    return Settings()
+
+
+settings = get_settings()
