@@ -1,13 +1,17 @@
+import uuid
 import os
-from pathlib import Path
 from fastapi import UploadFile
 
-UPLOAD_DIR = Path("uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
+UPLOAD_DIR = "uploads"
 
 
-def save_upload_file(upload_file: UploadFile):
-    file_path = UPLOAD_DIR / upload_file.filename
-    with open(file_path, "wb") as buffer:
-        buffer.write(upload_file.file.read())
-    return upload_file.filename, str(file_path)
+async def save_upload_file_secure(file: UploadFile) -> tuple:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    # Gera nome seguro usando UUID
+    ext = file.filename.split(".")[-1] if "." in file.filename else "bin"
+    safe_name = f"{uuid.uuid4()}.{ext}"
+    path = os.path.join(UPLOAD_DIR, safe_name)
+    content = await file.read()
+    with open(path, "wb") as f:
+        f.write(content)
+    return safe_name, path

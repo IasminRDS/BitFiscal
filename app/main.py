@@ -1,58 +1,142 @@
-from fastapi import FastAPI, Request, Depends, Form, UploadFile, File
+import logging
+from fastapi import (
+    FastAPI,
+    Request,
+    Depends,
+    Form,
+    UploadFile,
+    File,
+    HTTPException,
+    Query,
+)
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
-from pathlib import Path
-import random
-import json
-import hashlib
-from functools import lru_cache
+from sqlalchemy import desc
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from apscheduler.schedulers.background import BackgroundScheduler
 
-from app.auth import get_current_user, verify_password, create_access_token, log_action
-from app.models import User, Ticket, BackupJob, UsageRule, MonitorHost
-from app.db import Base, engine, get_db
-from app.config import settings
-from app.services.files import save_upload_file
+from .auth import get_current_user, verify_password, create_access_token
+from .models import (
+    User,
+    Ticket,
+    TicketComment,
+    TicketAttachment,
+    BackupJob,
+    UsageRule,
+    MonitorHost,
+)
+from .db import Base, engine, get_db, SessionLocal
+from .config import settings
+from .services.files import save_upload_file_secure
+from .services import (
+    monitor,
+    backup,
+    usage,
+    base_conhecimento,
+    reports as report_service,
+)
 
-# Inicialização
-app = FastAPI(title="BITFISCAL", version="2.0.0")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title="BitFiscal", version="2.0")
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+
 Base.metadata.create_all(bind=engine)
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-templates = Jinja2Templates(directory=BASE_DIR / "app" / "templates")
-STATIC_DIR = BASE_DIR / "app" / "static"
-STATIC_DIR.mkdir(parents=True, exist_ok=True)
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+templates = Jinja2Templates(directory="app/templates")
 
 
-# Cache simulado para sistemas governamentais
-@lru_cache(maxsize=128)
-def cached_receita_query(endpoint: str, timestamp: str) -> str:
-    return json.dumps({"status": "ok", "cached": True, "data": "mock"})
+# Seed admin
+def seed_admin():
+    db = SessionLocal()
+    if not db.query(User).filter(User.username == "admin").first():
+        from .auth import get_password_hash
+
+        db.add(
+            User(
+                username="admin",
+                password_hash=get_password_hash("admin"),
+                role="admin",
+                tenant_id=1,
+            )
+        )
+        # Cria um tenant default se não existir
+        from .models import Tenant
+
+        if not db.query(Tenant).filter(Tenant.id == 1).first():
+            db.add(Tenant(id=1, name="CONTECH"))
+        db.commit()
+    db.close()
 
 
-# Lista de domínios bloqueados
-blocked_domains = {}
+seed_admin()
 
-# Base de conhecimento para auto-respostas
-KNOWLEDGE_BASE = {
-    "irpf": "Para declarar IRPF 2026, acesse: https://gov.br/receitafederal/irpf. Prazo: 23/03 a 29/05/2026.",
-    "senha": "Para redefinir senha do sistema, clique em 'Esqueci minha senha' na tela de login.",
-    "nota fiscal": "Emissão de NF-e: https://nfe.fazenda.gov.br. Certificado digital A1 ou A3 necessário.",
-    "backup": "Backups diários às 23h. Para restaurar, abra ticket com prioridade ALTA.",
-    "lentidao": "Verifique: 1) Conexão 2) Status em /monitor 3) Abra ticket se persistir.",
-}
+# Scheduler
+scheduler = BackgroundScheduler()
 
 
-# =========== AUTH ===========
+@app.on_event("startup")
+def start_scheduler():
+    def monitor_job():
+        db = SessionLocal()
+        try:
+            monitor.atualizar_todos_hosts(db)
+        finally:
+            db.close()
+
+    def backup_job():
+        db = SessionLocal()
+        try:
+            backup.executar_backups(db)
+        finally:
+            db.close()
+
+    scheduler.add_job(
+        monitor_job, "interval", seconds=settings.MONITOR_INTERVAL, id="monitor"
+    )
+    scheduler.add_job(backup_job, "cron", hour=2, minute=0, id="backup")
+    scheduler.start()
+
+
+@app.on_event("shutdown")
+def shutdown():
+    scheduler.shutdown()
+
+
+# Error handlers
+@app.exception_handler(RequestValidationError)
+async def validation_handler(request, exc):
+    errors = [
+        {"field": ".".join(str(x) for x in e["loc"][1:]), "message": e["msg"]}
+        for e in exc.errors()
+    ]
+    return JSONResponse(
+        {"detail": "Dados inválidos", "errors": errors}, status_code=422
+    )
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request, exc):
+    return JSONResponse({"detail": "Muitas requisições"}, status_code=429)
+
+
+# Auth routes
 @app.get("/login", response_class=HTMLResponse)
 def login_get(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
 
 @app.post("/auth/login")
+@limiter.limit("5/15minutes")
 def login_post(
     request: Request,
     username: str = Form(...),
@@ -61,37 +145,30 @@ def login_post(
 ):
     user = db.query(User).filter(User.username == username).first()
     if not user or not verify_password(password, user.password_hash):
-        log_action(username, "login_failed", "auth", {"reason": "invalid_credentials"})
         return templates.TemplateResponse(
-            "login.html", {"request": request, "error": "Usuário ou senha inválido!"}
+            "login.html", {"request": request, "error": "Usuário ou senha inválidos"}
         )
-
-    access = create_access_token(
-        {"sub": str(user.id)}, expires_delta=timedelta(hours=2)
-    )
-    log_action(user.username, "login_success", "auth", {"ip": "127.0.0.1"})
-
-    resp = RedirectResponse(url="/dashboard", status_code=303)
+    token = create_access_token({"sub": str(user.id)})
+    resp = RedirectResponse("/dashboard", status_code=303)
     resp.set_cookie(
-        key="access_token",
-        value=access,
+        "access_token",
+        token,
         httponly=True,
         samesite="lax",
-        max_age=7200,
-        secure=False,
-        path="/",
+        secure=settings.COOKIE_SECURE,
     )
+    logger.info(f"Login bem-sucedido: {username}")
     return resp
 
 
 @app.post("/auth/logout")
-def logout(request: Request):
-    resp = RedirectResponse(url="/login", status_code=303)
+def logout():
+    resp = RedirectResponse("/login", status_code=303)
     resp.delete_cookie("access_token")
     return resp
 
 
-# =========== DASHBOARD ===========
+# Dashboard
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(
     request: Request,
@@ -101,28 +178,17 @@ def dashboard(
     total_hosts = db.query(MonitorHost).count()
     total_tickets = db.query(Ticket).filter(Ticket.tenant_id == user.tenant_id).count()
     total_backups = db.query(BackupJob).count()
-
     status_counts = {
         "aberto": db.query(Ticket)
         .filter(Ticket.tenant_id == user.tenant_id, Ticket.status == "aberto")
         .count(),
-        "fechado": db.query(Ticket)
-        .filter(Ticket.tenant_id == user.tenant_id, Ticket.status == "fechado")
-        .count(),
         "andamento": db.query(Ticket)
         .filter(Ticket.tenant_id == user.tenant_id, Ticket.status == "andamento")
         .count(),
+        "fechado": db.query(Ticket)
+        .filter(Ticket.tenant_id == user.tenant_id, Ticket.status == "fechado")
+        .count(),
     }
-
-    critical_tickets = (
-        db.query(Ticket)
-        .filter(Ticket.tenant_id == user.tenant_id, Ticket.status == "aberto")
-        .order_by(Ticket.id.desc())
-        .limit(5)
-        .all()
-    )
-    last_backup = db.query(BackupJob).order_by(BackupJob.iniciado_em.desc()).first()
-
     return templates.TemplateResponse(
         "dashboard.html",
         {
@@ -132,15 +198,166 @@ def dashboard(
             "total_tickets": total_tickets,
             "total_backups": total_backups,
             "status_counts": status_counts,
-            "critical_tickets": critical_tickets,
-            "last_backup": last_backup,
         },
     )
 
 
-# =========== MONITORAMENTO ===========
+# Tickets
+@app.get("/tickets", response_class=HTMLResponse)
+def tickets_list(
+    request: Request,
+    status: str = None,
+    skip: int = 0,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    query = db.query(Ticket).filter(Ticket.tenant_id == user.tenant_id)
+    if status and status in ["aberto", "andamento", "pendente_aprovacao", "fechado"]:
+        query = query.filter(Ticket.status == status)
+    total = query.count()
+    tickets = query.order_by(desc(Ticket.criado_em)).offset(skip).limit(limit).all()
+    return templates.TemplateResponse(
+        "tickets.html",
+        {
+            "request": request,
+            "tickets": tickets,
+            "user": user,
+            "total": total,
+            "page": skip // limit + 1,
+            "pages": max(1, (total + limit - 1) // limit),
+        },
+    )
+
+
+@app.post("/tickets/create")
+def create_ticket(
+    titulo: str = Form(...),
+    descricao: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    if len(titulo) < 3 or len(titulo) > 150:
+        raise HTTPException(400, "Título inválido")
+    if len(descricao) < 10 or len(descricao) > 2000:
+        raise HTTPException(400, "Descrição inválida")
+    ticket = Ticket(
+        titulo=titulo,
+        descricao=descricao,
+        status="aberto",
+        tenant_id=user.tenant_id,
+        solicitante_id=user.id,
+    )
+    db.add(ticket)
+    db.commit()
+    return RedirectResponse("/tickets", status_code=303)
+
+
+@app.get("/tickets/{ticket_id}", response_class=HTMLResponse)
+def ticket_view(
+    ticket_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    ticket = (
+        db.query(Ticket)
+        .filter(Ticket.id == ticket_id, Ticket.tenant_id == user.tenant_id)
+        .first()
+    )
+    if not ticket:
+        raise HTTPException(404, "Ticket não encontrado")
+    return templates.TemplateResponse(
+        "ticket_view.html", {"request": request, "ticket": ticket, "user": user}
+    )
+
+
+@app.post("/tickets/{ticket_id}/comentar")
+def comentar(
+    ticket_id: int,
+    texto: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    ticket = (
+        db.query(Ticket)
+        .filter(Ticket.id == ticket_id, Ticket.tenant_id == user.tenant_id)
+        .first()
+    )
+    if not ticket:
+        raise HTTPException(404, "Ticket não encontrado")
+    if not texto or len(texto) > 1000:
+        raise HTTPException(400, "Comentário inválido")
+    db.add(TicketComment(ticket_id=ticket_id, autor_id=user.id, texto=texto))
+    db.commit()
+    return RedirectResponse(f"/tickets/{ticket_id}", status_code=303)
+
+
+@app.post("/tickets/{ticket_id}/anexar")
+async def anexar(
+    ticket_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    ticket = (
+        db.query(Ticket)
+        .filter(Ticket.id == ticket_id, Ticket.tenant_id == user.tenant_id)
+        .first()
+    )
+    if not ticket:
+        raise HTTPException(404)
+    fname, path = await save_upload_file_secure(file)
+    db.add(
+        TicketAttachment(
+            ticket_id=ticket_id, filename=fname, path=path, uploaded_by_id=user.id
+        )
+    )
+    db.commit()
+    return RedirectResponse(f"/tickets/{ticket_id}", status_code=303)
+
+
+@app.post("/tickets/{ticket_id}/status")
+def alterar_status(
+    ticket_id: int,
+    status: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    if status not in ["aberto", "andamento", "pendente_aprovacao", "fechado"]:
+        raise HTTPException(400)
+    ticket = (
+        db.query(Ticket)
+        .filter(Ticket.id == ticket_id, Ticket.tenant_id == user.tenant_id)
+        .first()
+    )
+    if not ticket:
+        raise HTTPException(404)
+    if status == "fechado" and user.role not in ("admin", "gestor"):
+        raise HTTPException(403)
+    ticket.status = status
+    db.commit()
+    return RedirectResponse(f"/tickets/{ticket_id}", status_code=303)
+
+
+@app.get("/download/{anexo_id}")
+def download_anexo(
+    anexo_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
+    anexo = (
+        db.query(TicketAttachment)
+        .join(Ticket)
+        .filter(TicketAttachment.id == anexo_id, Ticket.tenant_id == user.tenant_id)
+        .first()
+    )
+    if not anexo:
+        raise HTTPException(404)
+    return FileResponse(anexo.path, filename=anexo.filename)
+
+
+# Monitor
 @app.get("/monitor", response_class=HTMLResponse)
-def monitor(
+def monitor_page(
     request: Request,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -158,115 +375,84 @@ def monitor_add(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    if not nome or not ip:
+        raise HTTPException(400)
+    if db.query(MonitorHost).filter(MonitorHost.ip == ip).first():
+        raise HTTPException(400, "IP já cadastrado")
     host = MonitorHost(nome=nome, ip=ip)
     db.add(host)
     db.commit()
-    log_action(user.username, "host_added", "monitor", {"host": nome, "ip": ip})
     return RedirectResponse("/monitor", status_code=303)
 
 
-# =========== TICKETS ===========
-@app.get("/tickets", response_class=HTMLResponse)
-def tickets_list(
-    request: Request,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    tickets = db.query(Ticket).filter(Ticket.tenant_id == user.tenant_id).all()
-    return templates.TemplateResponse(
-        "tickets.html", {"request": request, "tickets": tickets, "user": user}
-    )
-
-
-@app.post("/tickets/create")
-def create_ticket(
-    titulo: str = Form(...),
-    descricao: str = Form(...),
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    ticket = Ticket(
-        titulo=titulo,
-        descricao=descricao,
-        status="aberto",
-        tenant_id=user.tenant_id,
-        solicitante_id=user.id,
-    )
-    db.add(ticket)
-    db.commit()
-    log_action(
-        user.username,
-        "ticket_created",
-        "tickets",
-        {"ticket_id": ticket.id, "titulo": titulo},
-    )
-    return RedirectResponse("/tickets", status_code=303)
-
-
-@app.get("/tickets/{ticket_id}", response_class=HTMLResponse)
-def ticket_view(
-    ticket_id: int,
-    request: Request,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    ticket = (
-        db.query(Ticket)
-        .filter(Ticket.id == ticket_id, Ticket.tenant_id == user.tenant_id)
-        .first()
-    )
-    if not ticket:
-        return RedirectResponse("/tickets")
-    return templates.TemplateResponse(
-        "ticket_view.html", {"request": request, "ticket": ticket, "user": user}
-    )
-
-
-# =========== BACKUPS ===========
+# Backups
 @app.get("/backups", response_class=HTMLResponse)
-def backups(
+def backups_page(
     request: Request,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    jobs = db.query(BackupJob).order_by(BackupJob.iniciado_em.desc()).all()
+    jobs = db.query(BackupJob).order_by(desc(BackupJob.iniciado_em)).limit(50).all()
     return templates.TemplateResponse(
         "backups.html", {"request": request, "backups": jobs, "user": user}
     )
 
 
-@app.post("/backups/add")
-def backup_add(
-    alvo: str = Form(...),
-    status: str = Form(...),
-    detalhe: str = Form(None),
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+@app.post("/backups/executar")
+def executar_backup_agora(
+    db: Session = Depends(get_db), user: User = Depends(get_current_user)
 ):
-    job = BackupJob(alvo=alvo, status=status, detalhe=detalhe)
-    db.add(job)
-    db.commit()
-    log_action(
-        user.username, "backup_registered", "backups", {"alvo": alvo, "status": status}
-    )
+    if user.role not in ("admin", "gestor"):
+        raise HTTPException(403)
+    backup.executar_backups(db)
     return RedirectResponse("/backups", status_code=303)
 
 
-# =========== CONTROLE DE USO ===========
+# Usage (controle de uso)
 @app.get("/usage", response_class=HTMLResponse)
-def usage_policy(
+def usage_page(
     request: Request,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    dominios = usage.read_blocked_domains()
     regras = db.query(UsageRule).all()
     return templates.TemplateResponse(
-        "usage.html", {"request": request, "regras": regras, "user": user}
+        "usage.html",
+        {"request": request, "dominios": dominios, "regras": regras, "user": user},
     )
 
 
-@app.post("/usage/add")
-def usage_add(
+@app.post("/usage/adicionar")
+def add_domain(
+    dominio: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    dominios = usage.read_blocked_domains()
+    if dominio not in dominios:
+        dominios.append(dominio.strip())
+        usage.write_blocked_domains(dominios)
+        usage.apply_hosts_block(dominios)
+    return RedirectResponse("/usage", status_code=303)
+
+
+@app.post("/usage/remover")
+def remove_domain(
+    dominio: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    dominios = usage.read_blocked_domains()
+    if dominio in dominios:
+        dominios.remove(dominio)
+        usage.write_blocked_domains(dominios)
+        usage.apply_hosts_block(dominios)
+    return RedirectResponse("/usage", status_code=303)
+
+
+@app.post("/usage/regra")
+def add_rule(
     grupo: str = Form(...),
     categoria: str = Form(...),
     permitido: str = Form(...),
@@ -274,47 +460,38 @@ def usage_add(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    regra = UsageRule(
-        grupo=grupo,
-        categoria=categoria,
-        permitido=(permitido == "sim"),
-        horario=horario,
+    db.add(
+        UsageRule(
+            grupo=grupo,
+            categoria=categoria,
+            permitido=(permitido == "sim"),
+            horario=horario,
+        )
     )
-    db.add(regra)
     db.commit()
-    log_action(
-        user.username,
-        "usage_rule_added",
-        "usage",
-        {"grupo": grupo, "categoria": categoria},
-    )
     return RedirectResponse("/usage", status_code=303)
 
 
-@app.post("/usage/block-domain")
-def block_domain(
-    domain: str = Form(...),
-    department: str = Form(...),
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+# FAQ
+@app.get("/faq", response_class=HTMLResponse)
+def faq_page(request: Request, user: User = Depends(get_current_user)):
+    return templates.TemplateResponse("faq.html", {"request": request, "user": user})
+
+
+@app.post("/faq")
+def faq_search(
+    request: Request, question: str = Form(...), user: User = Depends(get_current_user)
 ):
-    key = f"{department}:{domain}"
-    blocked_domains[key] = {
-        "blocked_at": datetime.now().isoformat(),
-        "blocked_by": user.username,
-    }
-    log_action(
-        user.username,
-        "domain_blocked",
-        "usage",
-        {"domain": domain, "department": department},
+    answer = base_conhecimento.find_answer(question)
+    return templates.TemplateResponse(
+        "faq.html",
+        {"request": request, "question": question, "answer": answer, "user": user},
     )
-    return RedirectResponse("/usage", status_code=303)
 
 
-# =========== RELATÓRIOS ===========
+# Reports
 @app.get("/reports", response_class=HTMLResponse)
-def reports(
+def reports_page(
     request: Request,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -325,181 +502,17 @@ def reports(
     )
 
 
-# =========== APIs DE INTEGRAÇÃO (MELHORIAS) ===========
+@app.get("/reports/csv")
+def download_csv(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    tickets = db.query(Ticket).filter(Ticket.tenant_id == user.tenant_id).all()
+    csv_content = report_service.tickets_csv(tickets)
+    from fastapi.responses import PlainTextResponse
 
-
-@app.get("/api/receita/consulta")
-def consulta_receita(
-    cpf: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)
-):
-    """Cache para reduzir latência na Receita Federal"""
-    import time
-
-    timestamp = str(int(time.time()) // 300)
-    result = cached_receita_query(f"cpf/{cpf}", timestamp)
-    data = json.loads(result)
-
-    return {
-        "cpf": cpf,
-        "result": data,
-        "latency_ms": 45 if data.get("cached") else 1200,
-        "message": (
-            "✅ Consulta otimizada com cache"
-            if data.get("cached")
-            else "⏳ Consulta direta"
-        ),
-    }
-
-
-@app.get("/api/usage/blocked")
-def get_blocked_domains(user: User = Depends(get_current_user)):
-    """Lista domínios bloqueados"""
-    return {
-        "blocked": [
-            {"domain": k.split(":")[1], "dept": k.split(":")[0], **v}
-            for k, v in blocked_domains.items()
-        ]
-    }
-
-
-@app.get("/api/monitor/alerts")
-def get_network_alerts(
-    db: Session = Depends(get_db), user: User = Depends(get_current_user)
-):
-    """Alertas proativos baseados em métricas"""
-    alerts = []
-
-    if random.random() > 0.7:
-        alerts.append(
-            {
-                "level": "critical",
-                "title": "🔴 Servidor de Arquivos Offline",
-                "message": "SRV-ARQUIVOS-01 não responde há 3 minutos",
-                "action": "Verificar conexão e reiniciar serviço",
-                "timestamp": datetime.now().isoformat(),
-            }
-        )
-
-    if random.random() > 0.6:
-        alerts.append(
-            {
-                "level": "warning",
-                "title": "🟡 Alta Utilização de CPU",
-                "message": "Receita Federal API: 92% CPU por 10 minutos",
-                "action": "Considerar cache adicional",
-                "timestamp": datetime.now().isoformat(),
-            }
-        )
-
-    if not alerts:
-        alerts.append(
-            {
-                "level": "success",
-                "title": "🟢 Todos os Sistemas Operacionais",
-                "message": "Infraestrutura estável",
-                "action": None,
-                "timestamp": datetime.now().isoformat(),
-            }
-        )
-
-    return {"alerts": alerts, "generated_at": datetime.now().isoformat()}
-
-
-@app.get("/api/monitor/{host_id}/metrics")
-def host_metrics(host_id: int, db: Session = Depends(get_db)):
-    """Métricas SNMP simuladas"""
-    return JSONResponse(
-        {
-            "cpu": random.randint(20, 80),
-            "memory": random.randint(30, 90),
-            "disk": random.randint(40, 85),
-            "network_in": random.randint(100, 1000),
-            "network_out": random.randint(50, 800),
-            "timestamp": datetime.now().isoformat(),
-        }
+    return PlainTextResponse(
+        csv_content, headers={"Content-Disposition": "attachment; filename=tickets.csv"}
     )
 
 
-@app.post("/backups/{job_id}/run")
-def run_backup(
-    job_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)
-):
-    """Executa backup simulado"""
-    job = db.query(BackupJob).filter(BackupJob.id == job_id).first()
-    if not job:
-        return JSONResponse({"error": "Job não encontrado"}, status_code=404)
-
-    job.status = "sucesso"
-    size = random.randint(200, 2000)
-    job.detalhe = f"Backup: {size}MB criptografados (SHA256)"
-    job.finalizado_em = datetime.now()
-    db.commit()
-
-    log_action(
-        user.username, "backup_executed", "backups", {"job_id": job_id, "size_mb": size}
-    )
-    return JSONResponse({"status": "success", "size_mb": size})
-
-
-@app.post("/backups/{job_id}/verify")
-def verify_backup(
-    job_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)
-):
-    """Verifica integridade do backup"""
-    job = db.query(BackupJob).filter(BackupJob.id == job_id).first()
-    if not job:
-        return {"error": "Job não encontrado"}
-
-    checksum = hashlib.sha256(
-        f"backup_{job_id}_{datetime.now().isoformat()}".encode()
-    ).hexdigest()
-    return {
-        "status": "verified",
-        "checksum": f"sha256:{checksum[:32]}...",
-        "integrity": "✅ OK",
-    }
-
-
-@app.post("/backups/schedule")
-def schedule_backup(
-    target: str = Form(...),
-    frequency: str = Form(...),
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    """Agenda backup automático"""
-    log_action(
-        user.username,
-        "backup_scheduled",
-        "backups",
-        {"target": target, "frequency": frequency},
-    )
-    return {
-        "status": "scheduled",
-        "target": target,
-        "frequency": frequency,
-        "next_run": "Hoje 23:00",
-    }
-
-
-@app.post("/tickets/{ticket_id}/suggest-reply")
-def suggest_reply(
-    ticket_id: int,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    """Sugere resposta automática baseada em palavras-chave"""
-    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
-    if not ticket:
-        return {"error": "Ticket não encontrado"}
-
-    suggestions = []
-    text_lower = (ticket.descricao or "").lower()
-
-    for keyword, response in KNOWLEDGE_BASE.items():
-        if keyword in text_lower:
-            suggestions.append(
-                {"keyword": keyword, "suggestion": response, "confidence": 0.9}
-            )
-
-    return {"ticket_id": ticket_id, "suggestions": suggestions}
+@app.get("/health")
+def health():
+    return {"status": "ok", "version": "2.0"}

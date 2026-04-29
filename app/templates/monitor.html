@@ -24,6 +24,8 @@
         padding: 24px 0;
         position: fixed;
         height: 100vh;
+        display: flex;
+        flex-direction: column;
       }
       .sidebar-logo {
         padding: 0 24px 24px;
@@ -32,11 +34,15 @@
       }
       .sidebar-logo h2 {
         color: #fff;
-        font-size: 24px;
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
       .sidebar-logo p {
         color: #94a3b8;
         font-size: 12px;
+        margin-top: 4px;
       }
       .nav-item {
         padding: 14px 24px;
@@ -47,6 +53,7 @@
         gap: 12px;
         transition: all 0.3s;
         border-left: 3px solid transparent;
+        font-size: 14px;
       }
       .nav-item:hover {
         background: rgba(59, 130, 246, 0.1);
@@ -57,45 +64,122 @@
         background: rgba(59, 130, 246, 0.15);
         color: #3b82f6;
         border-left-color: #3b82f6;
+        font-weight: 600;
+      }
+      .sidebar-bottom {
+        margin-top: auto;
+        padding: 20px 24px;
+        border-top: 1px solid #334155;
+      }
+      .sidebar-bottom a {
+        color: #ef4444;
+        text-decoration: none;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
       .main-content {
         flex: 1;
         margin-left: 260px;
         padding: 30px;
+        overflow-y: auto;
       }
       .header {
         margin-bottom: 30px;
         padding-bottom: 20px;
         border-bottom: 2px solid #334155;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
       }
       .header h1 {
         color: #fff;
         font-size: 28px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .header-subtitle {
+        color: #94a3b8;
+        font-size: 14px;
+        margin-top: 4px;
+      }
+      .refresh-indicator {
+        background: #10b981;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        transition: box-shadow 0.3s;
+      }
+      .card:hover {
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+      }
+      .card-title {
+        font-size: 18px;
+        color: #fff;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #334155;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .form-row {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
       }
       .form-group {
-        margin-bottom: 20px;
+        flex: 1;
+        min-width: 200px;
+        margin-bottom: 15px;
       }
       .form-group label {
         display: block;
         margin-bottom: 8px;
         color: #94a3b8;
+        font-size: 14px;
+        font-weight: 500;
       }
-      .form-group input,
-      .form-group select {
+      .form-group input {
         width: 100%;
-        max-width: 400px;
-        padding: 10px;
+        padding: 10px 14px;
         border: 1px solid #334155;
         border-radius: 6px;
         background: #0f172a;
         color: #fff;
+        font-size: 14px;
+        transition: border-color 0.3s;
+      }
+      .form-group input:focus {
+        outline: none;
+        border-color: #3b82f6;
       }
       .btn {
-        padding: 10px 20px;
+        padding: 12px 24px;
         border: none;
         border-radius: 6px;
         cursor: pointer;
         font-weight: 600;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
       }
       .btn-primary {
         background: #3b82f6;
@@ -104,19 +188,31 @@
       .btn-primary:hover {
         background: #2563eb;
       }
-      .card {
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+      }
+      .stat-card {
         background: #1e293b;
         border: 1px solid #334155;
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 24px;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
       }
-      .card-title {
-        font-size: 18px;
-        color: #fff;
-        margin-bottom: 20px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #334155;
+      .stat-value {
+        font-size: 32px;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      .stat-label {
+        font-size: 12px;
+        color: #94a3b8;
+        text-transform: uppercase;
+      }
+      .table-wrapper {
+        overflow-x: auto;
       }
       table {
         width: 100%;
@@ -124,57 +220,290 @@
       }
       th,
       td {
-        padding: 12px;
+        padding: 14px 16px;
         text-align: left;
         border-bottom: 1px solid #334155;
+        font-size: 14px;
       }
       th {
         color: #94a3b8;
         font-weight: 600;
         text-transform: uppercase;
         font-size: 12px;
+        letter-spacing: 0.5px;
       }
-      .status-ok {
+      td.status {
+        font-weight: 600;
+      }
+      .status-online {
         color: #10b981;
       }
-      .status-error {
+      .status-offline {
         color: #ef4444;
+      }
+      .status-unknown {
+        color: #f59e0b;
+      }
+      .ping-good {
+        color: #10b981;
+      }
+      .ping-warning {
+        color: #f59e0b;
+      }
+      .ping-bad {
+        color: #ef4444;
+      }
+      .fail-count {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .fail-warning {
+        background: rgba(245, 158, 11, 0.2);
+        color: #f59e0b;
+      }
+      .fail-critical {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        color: #94a3b8;
+      }
+      .empty-state svg {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 20px;
+        opacity: 0.5;
       }
     </style>
   </head>
   <body>
+    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-logo">
-        <h2>🔷 BITFISCAL</h2>
-        <p>Sistema de Gestão</p>
+        <h2>
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#3b82f6"
+            stroke-width="2"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="3" />
+            <path d="M8 12h8" />
+            <path d="M12 8v8" />
+          </svg>
+          BITFISCAL
+        </h2>
+        <p>Sistema de Gestão e Monitoramento</p>
       </div>
       <nav>
-        <a href="/dashboard" class="nav-item">📊 Dashboard</a>
-        <a href="/monitor" class="nav-item active">📡 Monitoramento</a>
-        <a href="/tickets" class="nav-item">🎫 Atendimento</a>
-        <a href="/backups" class="nav-item">💾 Backups</a>
-        <a href="/usage" class="nav-item">🔒 Controle de Uso</a>
-        <a href="/reports" class="nav-item">📈 Relatórios</a>
+        <a href="/dashboard" class="nav-item">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+          </svg>
+          Dashboard
+        </a>
+        <a href="/monitor" class="nav-item active">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+          </svg>
+          Monitoramento
+        </a>
+        <a href="/tickets" class="nav-item">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+            />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
+          Atendimento
+        </a>
+        <a href="/backups" class="nav-item">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Backups
+        </a>
+        <a href="/usage" class="nav-item">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          Controle de Uso
+        </a>
+        <a href="/faq" class="nav-item">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          FAQ
+        </a>
+        <a href="/reports" class="nav-item">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+          </svg>
+          Relatórios
+        </a>
       </nav>
+      <div class="sidebar-bottom">
+        <a href="/auth/logout">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          Sair
+        </a>
+      </div>
     </aside>
 
+    <!-- Conteúdo principal -->
     <main class="main-content">
       <div class="header">
-        <h1>📡 Monitoramento de Rede</h1>
-        <p style="color: #94a3b8">
-          Acompanhamento em tempo real dos hosts e servidores
-        </p>
+        <div>
+          <h1>
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#3b82f6"
+              stroke-width="2"
+            >
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+            Monitoramento de Rede
+          </h1>
+          <div class="header-subtitle">Status em tempo real dos servidores</div>
+        </div>
+        <div class="refresh-indicator">
+          <span id="refresh-status">● Online</span>
+          <span id="refresh-timer">(próxima atualização: --s)</span>
+        </div>
       </div>
 
+      <!-- Cartões de estatísticas -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" style="color: #3b82f6">
+            {{ hosts | length }}
+          </div>
+          <div class="stat-label">Hosts monitorados</div>
+        </div>
+        <div class="stat-card">
+          {% set online = hosts | selectattr('status', 'equalto', 'online') |
+          list | length %}
+          <div class="stat-value" style="color: #10b981">{{ online }}</div>
+          <div class="stat-label">Online</div>
+        </div>
+        <div class="stat-card">
+          {% set offline = hosts | selectattr('status', 'equalto', 'offline') |
+          list | length %}
+          <div class="stat-value" style="color: #ef4444">{{ offline }}</div>
+          <div class="stat-label">Offline</div>
+        </div>
+        <div class="stat-card">
+          {% set unknowns = hosts | selectattr('status', 'not in', ['online',
+          'offline']) | list | length %}
+          <div class="stat-value" style="color: #f59e0b">{{ unknowns }}</div>
+          <div class="stat-label">Desconhecido</div>
+        </div>
+      </div>
+
+      <!-- Adicionar host -->
       <div class="card">
-        <div class="card-title">Adicionar Host</div>
-        <form method="POST" action="/monitor/add">
+        <div class="card-title">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="16" />
+            <line x1="8" y1="12" x2="16" y2="12" />
+          </svg>
+          Adicionar Novo Host
+        </div>
+        <form method="POST" action="/monitor/add" class="form-row">
           <div class="form-group">
-            <label>Nome do Host</label>
+            <label>Nome do host</label>
             <input
               type="text"
               name="nome"
-              placeholder="Ex: Servidor-IRPF"
+              placeholder="Ex: Servidor Principal"
               required
             />
           </div>
@@ -183,45 +512,136 @@
             <input
               type="text"
               name="ip"
-              placeholder="Ex: 192.168.1.100"
+              placeholder="192.168.1.100"
               required
+              pattern="^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+              title="Formato: 192.168.1.100"
             />
           </div>
-          <button type="submit" class="btn btn-primary">Adicionar Host</button>
+          <div
+            style="display: flex; align-items: flex-end; margin-bottom: 15px"
+          >
+            <button type="submit" class="btn btn-primary">
+              Adicionar Host
+            </button>
+          </div>
         </form>
       </div>
 
+      <!-- Tabela de hosts -->
       <div class="card">
-        <div class="card-title">Hosts Monitorados</div>
+        <div class="card-title">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+            <line x1="6" y1="6" x2="6.01" y2="6" />
+            <line x1="6" y1="18" x2="6.01" y2="18" />
+          </svg>
+          Hosts Monitorados
+        </div>
+
         {% if hosts %}
-        <table>
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>IP</th>
-              <th>Status</th>
-              <th>Ping (ms)</th>
-              <th>Última Atualização</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for host in hosts %}
-            <tr>
-              <td>{{ host.nome }}</td>
-              <td>{{ host.ip }}</td>
-              <td class="status-ok">● Online</td>
-              <td>{{ host.ping | default(20) }}ms</td>
-              <td>{{ host.updated_at | default('Agora') }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>IP</th>
+                <th>Status</th>
+                <th>Ping (ms)</th>
+                <th>Falhas consecutivas</th>
+                <th>Última atualização</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for host in hosts %}
+              <tr>
+                <td><strong>{{ host.nome }}</strong></td>
+                <td>
+                  <code
+                    style="
+                      background: #0f172a;
+                      padding: 2px 6px;
+                      border-radius: 4px;
+                    "
+                    >{{ host.ip }}</code
+                  >
+                </td>
+                <td class="status">
+                  {% if host.status == 'online' %}
+                  <span class="status-online">● Online</span>
+                  {% elif host.status == 'offline' %}
+                  <span class="status-offline">● Offline</span>
+                  {% else %}
+                  <span class="status-unknown">● {{ host.status }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% set ping = host.ultimo_ping_ms %} {% if ping > 0 %}
+                  <span
+                    class="{% if ping < 50 %}ping-good{% elif ping < 150 %}ping-warning{% else %}ping-bad{% endif %}"
+                    >{{ ping }} ms</span
+                  >
+                  {% else %} - {% endif %}
+                </td>
+                <td>
+                  {% if host.falhas_consecutivas > 0 %}
+                  <span
+                    class="fail-count {% if host.falhas_consecutivas >= 3 %}fail-critical{% else %}fail-warning{% endif %}"
+                  >
+                    {{ host.falhas_consecutivas }}
+                  </span>
+                  {% else %}
+                  <span style="color: #10b981">0</span>
+                  {% endif %}
+                </td>
+                <td style="color: #94a3b8; font-size: 13px">
+                  {{ host.atualizado_em.strftime('%d/%m/%Y %H:%M') if
+                  host.atualizado_em else 'Nunca' }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
         {% else %}
-        <p style="color: #94a3b8; text-align: center; padding: 40px">
-          Nenhum host cadastrado.
-        </p>
+        <div class="empty-state">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+          >
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+            <line x1="6" y1="6" x2="6.01" y2="6" />
+            <line x1="6" y1="18" x2="6.01" y2="18" />
+          </svg>
+          <p>Nenhum host cadastrado.</p>
+          <p style="font-size: 13px; margin-top: 5px">
+            Adicione um servidor acima para começar o monitoramento.
+          </p>
+        </div>
         {% endif %}
       </div>
     </main>
+
+    <script>
+      let seconds = {{ settings.MONITOR_INTERVAL | default(300) }};
+      const timerEl = document.getElementById('refresh-timer');
+      function updateTimer() {
+        timerEl.textContent = `(próxima atualização: ${seconds}s)`;
+        if (seconds <= 0) seconds = {{ settings.MONITOR_INTERVAL | default(300) }};
+        seconds--;
+      }
+      setInterval(updateTimer, 1000);
+    </script>
   </body>
 </html>

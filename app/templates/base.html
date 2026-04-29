@@ -1,24 +1,40 @@
 <!doctype html>
-<html lang="pt-BR">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block page_title %}BITFISCAL{% endblock %}</title>
-
-    <!-- CSS: caminho relativo direto (funciona mesmo sem url_for) -->
-    <link rel="stylesheet" href="/static/style.css" />
-
-    <!-- Fallback inline mínimo -->
-    <style>
-      body {
-        margin: 0;
-        font-family: system-ui, sans-serif;
-        background: #0f172a;
-        color: #e2e8f0;
-      }
-    </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BitFiscal - {% block title %}{% endblock %}</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
   </head>
   <body>
-    {% block content %}{% endblock %} {% block scripts %}{% endblock %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/dashboard">BitFiscal</a>
+        <div class="collapse navbar-collapse">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="/dashboard">Dashboard</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/monitor">Monitoramento</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/tickets">Chamados</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/backups">Backups</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/usage">Controle de Uso</a>
+            </li>
+            <li class="nav-item"><a class="nav-link" href="/faq">FAQ</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    <div class="container mt-4">{% block content %}{% endblock %}</div>
   </body>
 </html>
