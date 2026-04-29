@@ -4,20 +4,16 @@ import secrets
 
 
 class Settings(BaseSettings):
-    # 🔐 JWT
     SECRET_KEY: str = secrets.token_urlsafe(32)
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 120
-
-    # 🗄️ Database
     DATABASE_URL: str = "sqlite:///./bitfiscal.db"
-
-    # 🌐 App
-    APP_NAME: str = "BITFISCAL - Gestão Contábil"  # ← ALTERADO
+    APP_NAME: str = "BITFISCAL"
     DEBUG: bool = True
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 @lru_cache()
