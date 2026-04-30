@@ -357,14 +357,15 @@ def download_anexo(
 
 # Monitor
 @app.get("/monitor", response_class=HTMLResponse)
-def monitor_page(
-    request: Request,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    hosts = db.query(MonitorHost).all()
+def monitor_page(request: Request):
+    # ... seu código ...
     return templates.TemplateResponse(
-        "monitor.html", {"request": request, "hosts": hosts, "user": user}
+        "monitor.html",
+        {
+            "request": request,
+            "hosts": hosts,  # suas variáveis atuais
+            "settings": settings,  # ← inclua esta linha
+        },
     )
 
 
