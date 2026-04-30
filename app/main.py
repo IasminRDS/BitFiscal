@@ -19,6 +19,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from apscheduler.schedulers.background import BackgroundScheduler
+from app.config import settings
 
 from .auth import get_current_user, verify_password, create_access_token
 from .models import (
@@ -31,7 +32,6 @@ from .models import (
     MonitorHost,
 )
 from .db import Base, engine, get_db, SessionLocal
-from .config import settings
 from .services.files import save_upload_file_secure
 from .services import (
     monitor,
@@ -357,14 +357,14 @@ def download_anexo(
 
 # Monitor
 @app.get("/monitor", response_class=HTMLResponse)
-def monitor_page(request: Request):
-    # ... seu código ...
+def monitor_page(request: Request, db: Session = Depends(get_db)):
+    hosts = db.query(MonitorHost).order_by(MonitorHost.nome).all()
     return templates.TemplateResponse(
         "monitor.html",
         {
             "request": request,
-            "hosts": hosts,  # suas variáveis atuais
-            "settings": settings,  # ← inclua esta linha
+            "hosts": hosts,
+            "settings": settings,  # agora settings é uma variável válida
         },
     )
 
