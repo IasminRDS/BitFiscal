@@ -19,7 +19,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from apscheduler.schedulers.background import BackgroundScheduler
-from app.config import settings
+from app.config import settings  # ← mantenha só esta importação absoluta
 
 from .auth import get_current_user, verify_password, create_access_token
 from .models import (
@@ -127,6 +127,12 @@ async def validation_handler(request, exc):
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request, exc):
     return JSONResponse({"detail": "Muitas requisições"}, status_code=429)
+
+
+# Rota raiz (novo)
+@app.get("/")
+async def root():
+    return RedirectResponse("/login")
 
 
 # Auth routes
@@ -364,7 +370,7 @@ def monitor_page(request: Request, db: Session = Depends(get_db)):
         {
             "request": request,
             "hosts": hosts,
-            "settings": settings,  # agora settings é uma variável válida
+            "settings": settings,
         },
     )
 
