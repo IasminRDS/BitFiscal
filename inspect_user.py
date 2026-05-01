@@ -1,4 +1,3 @@
-# inspect_user.py
 from app.models import User
 from app.db import engine
 
