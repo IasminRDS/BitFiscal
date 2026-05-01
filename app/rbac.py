@@ -1,7 +1,3 @@
-"""
-app/rbac.py - Role-Based Access Control (Controle de Acesso por Papéis)
-"""
-
 from fastapi import Depends, HTTPException, status
 import logging
 from .auth import get_current_user
@@ -48,7 +44,6 @@ ROLE_PERMISSIONS = {
         "view_reports",
     },
 }
-
 
 def require_role(*roles: str):
     """
