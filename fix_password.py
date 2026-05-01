@@ -1,9 +1,7 @@
-# fix_password.py - CORREÇÃO PARA PBKDF2 (sem bcrypt)
 from passlib.context import CryptContext
 from app.db import SessionLocal, engine, Base
 from app.models import User
 
-# Contexto temporário só com pbkdf2 (evita bug do bcrypt)
 pwd_context = CryptContext(
     schemes=["pbkdf2_sha256"], pbkdf2_sha256__default_rounds=29000
 )
@@ -15,7 +13,6 @@ print("👥 Usuários no banco:")
 for u in db.query(User).all():
     print(f"  ID={u.id} | Username={u.username} | Hash={u.password_hash[:60]}...")
 
-# 🎯 Corrigir senha do admin (edite conforme necessário)
 username = "admin"
 nova_senha = "Admin123!"  # senha temporária
 
