@@ -19,7 +19,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from apscheduler.schedulers.background import BackgroundScheduler
-from app.config import settings  # ← mantenha só esta importação absoluta
+from app.config import settings
 
 from .auth import get_current_user, verify_password, create_access_token
 from .models import (
@@ -55,7 +55,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
 
-# Seed admin
+#Seed_admin
 def seed_admin():
     db = SessionLocal()
     if not db.query(User).filter(User.username == "admin").first():
@@ -80,7 +80,7 @@ def seed_admin():
 
 seed_admin()
 
-# Scheduler
+#Scheduler
 scheduler = BackgroundScheduler()
 
 
@@ -112,7 +112,7 @@ def shutdown():
     scheduler.shutdown()
 
 
-# Error handlers
+#Error_handlers
 @app.exception_handler(RequestValidationError)
 async def validation_handler(request, exc):
     errors = [
@@ -129,13 +129,13 @@ async def rate_limit_handler(request, exc):
     return JSONResponse({"detail": "Muitas requisições"}, status_code=429)
 
 
-# Rota raiz (novo)
+#Rota raiz
 @app.get("/")
 async def root():
     return RedirectResponse("/login")
 
 
-# Auth routes
+#Auth_routes
 @app.get("/login", response_class=HTMLResponse)
 def login_get(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
@@ -174,7 +174,7 @@ def logout():
     return resp
 
 
-# Dashboard
+#Dashboard
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(
     request: Request,
@@ -208,7 +208,7 @@ def dashboard(
     )
 
 
-# Tickets
+#Tickets
 @app.get("/tickets", response_class=HTMLResponse)
 def tickets_list(
     request: Request,
@@ -361,7 +361,7 @@ def download_anexo(
     return FileResponse(anexo.path, filename=anexo.filename)
 
 
-# Monitor
+#Monitor
 @app.get("/monitor", response_class=HTMLResponse)
 def monitor_page(request: Request, db: Session = Depends(get_db)):
     hosts = db.query(MonitorHost).order_by(MonitorHost.nome).all()
@@ -392,7 +392,7 @@ def monitor_add(
     return RedirectResponse("/monitor", status_code=303)
 
 
-# Backups
+#Backups
 @app.get("/backups", response_class=HTMLResponse)
 def backups_page(
     request: Request,
@@ -479,7 +479,7 @@ def add_rule(
     return RedirectResponse("/usage", status_code=303)
 
 
-# FAQ
+#FAQ
 @app.get("/faq", response_class=HTMLResponse)
 def faq_page(request: Request, user: User = Depends(get_current_user)):
     return templates.TemplateResponse("faq.html", {"request": request, "user": user})
@@ -496,7 +496,7 @@ def faq_search(
     )
 
 
-# Reports
+#Reports
 @app.get("/reports", response_class=HTMLResponse)
 def reports_page(
     request: Request,
