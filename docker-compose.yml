@@ -3,20 +3,23 @@ services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_DB: contech
-      POSTGRES_USER: contech
-      POSTGRES_PASSWORD: contech
+      POSTGRES_DB: bitfiscal
+      POSTGRES_USER: bitfiscal
+      POSTGRES_PASSWORD: bitfiscal
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  contech:
+  bitfiscal:
     build: .
     ports:
       - "8000:8000"
-    env_file:
-      - .env
+    environment:
+      SECRET_KEY: troque-esta-chave-em-producao
+      DATABASE_URL: postgresql+psycopg2://bitfiscal:bitfiscal@db:5432/bitfiscal
+      COOKIE_SECURE: "False"
+      KNOWLEDGE_BASE_FILE: data/base_conhecimento.json
     depends_on:
       - db
 

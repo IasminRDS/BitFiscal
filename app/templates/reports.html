@@ -194,6 +194,15 @@
       </div>
 
       <div class="card">
+        <div class="card-title">Exportar Relatórios</div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap">
+          <a href="/reports/csv" class="btn btn-primary" style="text-decoration: none">⬇️ CSV</a>
+          <a href="/reports/pdf" class="btn btn-primary" style="text-decoration: none">⬇️ PDF</a>
+          <a href="/reports/excel" class="btn btn-primary" style="text-decoration: none">⬇️ Excel</a>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="card-title">Todos os Tickets</div>
         {% if tickets %}
         <table>
@@ -219,7 +228,7 @@
               </td>
               <td>{{ ticket.solicitante_id }}</td>
               <td>{{ ticket.responsavel_id or 'Não atribuído' }}</td>
-              <td>{{ ticket.created_at }}</td>
+              <td>{{ ticket.criado_em.strftime('%d/%m/%Y %H:%M') if ticket.criado_em else '' }}</td>
             </tr>
             {% endfor %}
           </tbody>

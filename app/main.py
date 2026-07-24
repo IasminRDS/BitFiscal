@@ -174,6 +174,13 @@ def logout():
     return resp
 
 
+@app.get("/auth/logout")
+def logout_get():
+    resp = RedirectResponse("/login", status_code=303)
+    resp.delete_cookie("access_token")
+    return resp
+
+
 #Dashboard
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(
@@ -415,6 +422,25 @@ def executar_backup_agora(
     return RedirectResponse("/backups", status_code=303)
 
 
+@app.post("/backups/add")
+def registrar_backup(
+    alvo: str = Form(...),
+    status: str = Form(...),
+    detalhe: str = Form(""),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    if user.role not in ("admin", "gestor"):
+        raise HTTPException(403)
+    if not alvo or len(alvo) > 100:
+        raise HTTPException(400, "Alvo inválido")
+    if status not in ("sucesso", "ok", "falha", "parcial", "pendente"):
+        raise HTTPException(400, "Status inválido")
+    db.add(BackupJob(alvo=alvo, status=status, detalhe=detalhe[:500]))
+    db.commit()
+    return RedirectResponse("/backups", status_code=303)
+
+
 # Usage (controle de uso)
 @app.get("/usage", response_class=HTMLResponse)
 def usage_page(
@@ -479,6 +505,58 @@ def add_rule(
     return RedirectResponse("/usage", status_code=303)
 
 
+#Users (gestão de usuários — admin)
+@app.get("/users", response_class=HTMLResponse)
+def users_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    if user.role != "admin":
+        raise HTTPException(403, "Apenas administradores")
+    users = (
+        db.query(User)
+        .filter(User.tenant_id == user.tenant_id)
+        .order_by(User.username)
+        .all()
+    )
+    return templates.TemplateResponse(
+        "users.html", {"request": request, "users": users, "user": user}
+    )
+
+
+@app.post("/users/add")
+def users_add(
+    username: str = Form(...),
+    password: str = Form(...),
+    role: str = Form("operador"),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    if user.role != "admin":
+        raise HTTPException(403, "Apenas administradores")
+    from .auth import get_password_hash
+
+    if len(username) < 3 or len(username) > 50:
+        raise HTTPException(400, "Usuário inválido")
+    if len(password) < 6:
+        raise HTTPException(400, "Senha deve ter ao menos 6 caracteres")
+    if role not in ("admin", "gestor", "operador"):
+        raise HTTPException(400, "Papel inválido")
+    if db.query(User).filter(User.username == username).first():
+        raise HTTPException(400, "Usuário já existe")
+    db.add(
+        User(
+            username=username,
+            password_hash=get_password_hash(password),
+            role=role,
+            tenant_id=user.tenant_id,
+        )
+    )
+    db.commit()
+    return RedirectResponse("/users", status_code=303)
+
+
 #FAQ
 @app.get("/faq", response_class=HTMLResponse)
 def faq_page(request: Request, user: User = Depends(get_current_user)):
@@ -517,6 +595,34 @@ def download_csv(db: Session = Depends(get_db), user: User = Depends(get_current
 
     return PlainTextResponse(
         csv_content, headers={"Content-Disposition": "attachment; filename=tickets.csv"}
+    )
+
+
+@app.get("/reports/pdf")
+def download_pdf(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    from fastapi.responses import Response
+
+    tickets = db.query(Ticket).filter(Ticket.tenant_id == user.tenant_id).all()
+    pdf = report_service.tickets_pdf(tickets)
+    return Response(
+        pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=tickets.pdf"},
+    )
+
+
+@app.get("/reports/excel")
+def download_excel(
+    db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
+    from fastapi.responses import Response
+
+    tickets = db.query(Ticket).filter(Ticket.tenant_id == user.tenant_id).all()
+    xlsx = report_service.tickets_excel(tickets)
+    return Response(
+        xlsx,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=tickets.xlsx"},
     )
 
 

@@ -3,11 +3,16 @@ from app.models import Ticket
 
 
 def get_all_tickets(db: Session):
-    return db.query(Ticket).order_by(Ticket.created_at.desc()).all()
+    return db.query(Ticket).order_by(Ticket.criado_em.desc()).all()
 
 
-def create_ticket(db: Session, title: str, description: str):
-    ticket = Ticket(title=title, description=description)
+def create_ticket(db: Session, titulo: str, descricao: str, tenant_id: int, solicitante_id: int = None):
+    ticket = Ticket(
+        titulo=titulo,
+        descricao=descricao,
+        tenant_id=tenant_id,
+        solicitante_id=solicitante_id,
+    )
     db.add(ticket)
     db.commit()
     db.refresh(ticket)

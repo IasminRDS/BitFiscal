@@ -1,0 +1,27 @@
+{% extends "base.html" %} {% block title %}FAQ{% endblock %} {% block content %}
+<div class="card">
+  <div class="card-title">❓ Base de Conhecimento</div>
+  <p style="color: var(--muted); font-size: 14px; margin-bottom: 16px">
+    Digite sua dúvida e busque uma resposta na base de conhecimento.
+  </p>
+  <form method="post" action="/faq">
+    <div class="form-row" style="gap: 8px">
+      <input
+        name="question"
+        placeholder="Ex: como faço backup?"
+        value="{{ question or '' }}"
+        required
+        style="margin: 0"
+      />
+      <button type="submit" class="btn btn-primary">Buscar</button>
+    </div>
+  </form>
+</div>
+
+{% if answer %}
+<div class="card">
+  <div class="card-title">Resposta</div>
+  <p style="font-size: 14px"><strong>Pergunta:</strong> {{ question }}</p>
+  <p style="font-size: 14px; margin-top: 10px; color: var(--text)">{{ answer }}</p>
+</div>
+{% endif %} {% endblock %}
