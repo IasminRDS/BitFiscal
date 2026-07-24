@@ -1,0 +1,29 @@
+# Deploy do BitFiscal em um host que roda Python (Render), usando o Dockerfile.
+# Um backend FastAPI NAO roda em hospedagem estatica (Netlify/GitHub Pages) nem
+# em edge/JS (Cloudflare Workers) — use um servico com runtime de contêiner.
+#
+# Como usar: em https://render.com, crie um novo Blueprint apontando para este
+# repositorio. O Render le este arquivo e provisiona o servico automaticamente.
+services:
+  - type: web
+    name: bitfiscal
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # Render injeta a porta em $PORT; o app precisa escutar nela.
+    dockerCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:///./bitfiscal.db
+      - key: COOKIE_SECURE
+        value: "true"
+      # Admin inicial. ADMIN_RESET garante a senha a cada boot (bom para demo).
+      # TROQUE ADMIN_PASSWORD antes de expor publicamente.
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        value: admin
+      - key: ADMIN_RESET
+        value: "true"

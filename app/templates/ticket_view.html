@@ -1,5 +1,5 @@
-{% extends "base.html" %} {% block page_title %}Ticket #{{ ticket.id }}{%
-endblock %} {% block content %}
+{% extends "base.html" %} {% block title %}Ticket #{{ ticket.id }}{% endblock %}
+{% block content %}
 
 <div class="card">
   <div
@@ -34,24 +34,16 @@ endblock %} {% block content %}
   <form method="post" action="/tickets/{{ ticket.id }}/status">
     <div class="form-row" style="gap: 8px">
       <select name="status" style="width: auto; min-width: 150px; margin: 0">
-        <option {% if ticket.status="" ="aberto" %}selected{% endif %}>
+        <option value="aberto" {% if ticket.status == 'aberto' %}selected{% endif %}>
           aberto
         </option>
-        <option {% if ticket.status="" ="andamento" %}selected{% endif %}>
+        <option value="andamento" {% if ticket.status == 'andamento' %}selected{% endif %}>
           andamento
         </option>
-        <option
-          {%
-          if
-          ticket.status=""
-          ="pendente_aprovacao"
-          %}selected{%
-          endif
-          %}
-        >
+        <option value="pendente_aprovacao" {% if ticket.status == 'pendente_aprovacao' %}selected{% endif %}>
           pendente_aprovacao
         </option>
-        <option {% if ticket.status="" ="fechado" %}selected{% endif %}>
+        <option value="fechado" {% if ticket.status == 'fechado' %}selected{% endif %}>
           fechado
         </option>
       </select>
