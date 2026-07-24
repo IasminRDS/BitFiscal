@@ -1,0 +1,14 @@
+# Nunca copie estes itens para a imagem Docker.
+# Evita, principalmente, embutir um banco SQLite local (com admin de senha
+# desconhecida) na imagem — causa de "Usuario ou senha invalidos" no deploy.
+*.db
+*.sqlite3
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+uploads/
+.git/
+.github/
+*.md
