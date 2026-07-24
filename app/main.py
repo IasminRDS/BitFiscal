@@ -57,25 +57,40 @@ templates = Jinja2Templates(directory="app/templates")
 
 #Seed_admin
 def seed_admin():
+    import os
+    from .auth import get_password_hash
+    from .models import Tenant
+
+    username = os.getenv("ADMIN_USERNAME", "admin")
+    password = os.getenv("ADMIN_PASSWORD", "admin")
+    # Escotilha de reset: se ADMIN_RESET for verdadeiro, garante que a senha do
+    # admin seja sempre a configurada (útil em demos/deploy com banco herdado).
+    reset = os.getenv("ADMIN_RESET", "false").lower() in ("1", "true", "yes")
+
     db = SessionLocal()
-    if not db.query(User).filter(User.username == "admin").first():
-        from .auth import get_password_hash
-
-        db.add(
-            User(
-                username="admin",
-                password_hash=get_password_hash("admin"),
-                role="admin",
-                tenant_id=1,
-            )
-        )
-        # Cria um tenant default se não existir
-        from .models import Tenant
-
+    try:
+        # Garante o tenant padrão
         if not db.query(Tenant).filter(Tenant.id == 1).first():
             db.add(Tenant(id=1, name="CONTECH"))
-        db.commit()
-    db.close()
+            db.commit()
+
+        admin = db.query(User).filter(User.username == username).first()
+        if not admin:
+            db.add(
+                User(
+                    username=username,
+                    password_hash=get_password_hash(password),
+                    role="admin",
+                    tenant_id=1,
+                )
+            )
+            db.commit()
+        elif reset:
+            admin.password_hash = get_password_hash(password)
+            admin.is_active = True
+            db.commit()
+    finally:
+        db.close()
 
 
 seed_admin()
