@@ -94,3 +94,11 @@ data/                  # Base de conhecimento (FAQ)
 - O bloqueio de domínios (Controle de Uso) edita `/etc/hosts` e exige execução
   como root; sem privilégios, a regra é registrada mas não aplicada ao sistema.
 - O monitoramento usa `ping` do sistema operacional.
+
+## 📄 Licença
+
+MIT — veja [LICENSE](./LICENSE).
+
+---
+
+Feito por **Iasmin Ribeiro de Souza** · [LinkedIn](https://www.linkedin.com/in/iasmin-ribeiro-de-souza-033536401) · [GitHub](https://github.com/IasminRDS)
