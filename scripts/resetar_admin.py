@@ -1,3 +1,16 @@
+"""Recria o usuário administrador com a senha padrão (uso local/demonstração).
+
+Rodar a partir da raiz do projeto:
+
+    python scripts/resetar_admin.py
+"""
+
+import sys
+from pathlib import Path
+
+# Permite importar o pacote `app` com o script morando em scripts/.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from passlib.context import CryptContext
 from app.db import SessionLocal, engine, Base
 from app.models import User

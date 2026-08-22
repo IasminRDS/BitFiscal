@@ -1,3 +1,16 @@
+"""Cria o usuário administrador inicial.
+
+Rodar a partir da raiz do projeto:
+
+    python scripts/criar_admin.py
+"""
+
+import sys
+from pathlib import Path
+
+# Permite importar o pacote `app` com o script morando em scripts/.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from app.db import SessionLocal
 from app.models import User
 from passlib.context import CryptContext

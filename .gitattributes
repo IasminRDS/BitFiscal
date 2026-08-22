@@ -1,0 +1,5 @@
+# Os templates Jinja e os assets estáticos são apresentação, não a linguagem
+# do projeto. Sem isto o GitHub rotula o repositório como "HTML" em vez de
+# Python, e ele some das buscas por linguagem.
+app/templates/**  linguist-vendored
+app/static/**     linguist-vendored
