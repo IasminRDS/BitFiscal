@@ -473,7 +473,7 @@
           <div class="stat-label">Offline</div>
         </div>
         <div class="stat-card">
-          {% set unknowns = hosts | selectattr('status', 'not in', ['online',
+          {% set unknowns = hosts | rejectattr('status', 'in', ['online',
           'offline']) | list | length %}
           <div class="stat-value" style="color: #f59e0b">{{ unknowns }}</div>
           <div class="stat-label">Desconhecido</div>

@@ -31,6 +31,14 @@ Construída em **FastAPI (Python)**.
 (pbkdf2-sha256), controle de acesso por papéis (RBAC — admin, gestor, operador)
 e limitação de requisições (rate limiting) no login.
 
+## Telas
+
+| Dashboard | Monitoramento de rede |
+|---|---|
+| ![Dashboard do BitFiscal: contadores de hosts, tickets e backups, alertas de performance e status dos tickets](docs/screenshots/dashboard.png) | ![Monitoramento: contadores por status e tabela de hosts com IP, ping e falhas consecutivas](docs/screenshots/monitor.png) |
+
+![Helpdesk: abertura de chamado e listagem com status](docs/screenshots/tickets.png)
+
 ## Arquitetura
 
 ```
